@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -72,10 +73,9 @@ public class SellerService {
             ));
         }
 
-        // We need to validate is this product belongs to the user whoose sellerID is passed
+        // We need to validate is this product belongs to the user sellerID is passed
 
         Product product = productService.getProductByID(productID);
-        System.out.println(product);
         AppUser owner = product.getSeller();
 
         if(!owner.getId().equals(sellerID)){
@@ -101,6 +101,8 @@ public class SellerService {
         List<ProductResponseBody> productResponseBodies = new ArrayList<>();
 
         for(Product product : products){
+
+            // Try model mapper to map all these automatically!
             AppUser seller = product.getSeller();
             ProductResponseBody productResponseBody = new ProductResponseBody();
             UserResponse userResponse=new UserResponse();
@@ -123,5 +125,73 @@ public class SellerService {
             productResponseBodies.add(productResponseBody);
         }
         return productResponseBodies;
+    }
+
+
+    public Integer getProductTotalQuantitySoldByID(UUID sellerID, UUID productID){
+        // Validate the seller
+        Boolean isSeller = userService.isSeller(sellerID);
+        if(isSeller == null){
+            throw new UserNotFound(String.format("Seller with id: %s is not found",sellerID.toString()));
+        }
+        else if(!isSeller){
+            throw new AcessNotFound(String.format("User with name %s is not a seller. Access denied!",
+                    Objects.requireNonNull(userRepository.findById(sellerID).orElse(null)).getName()));
+        }
+        // Validate the product
+        boolean validProduct = productService.validateProductID(productID);
+        if(!validProduct){
+            throw new InvalidProductID(String.format(
+                    "Product with id %s does not exist in system",
+                    productID.toString()
+            ));
+        }
+
+        // Check if the product is owned by this sellerID
+        Product product = productService.getProductByID(productID);
+        AppUser owner = product.getSeller();
+        if(!owner.getId().equals(sellerID)){
+            throw new AcessNotFound(String.format(
+                    "User with name %s does not have access to remove product %s",
+                    owner.getName(),
+                    product.getProductName()
+            ));
+        }
+
+        return product.getTotalSoldQuantity();
+    }
+
+
+    public Double getProductRatings(UUID sellerID, UUID productID){
+        // Validate the seller
+        Boolean isSeller = userService.isSeller(sellerID);
+        if(isSeller == null){
+            throw new UserNotFound(String.format("Seller with id: %s is not found",sellerID.toString()));
+        }
+        else if(!isSeller){
+            throw new AcessNotFound(String.format("User with name %s is not a seller. Access denied!",
+                    Objects.requireNonNull(userRepository.findById(sellerID).orElse(null)).getName()));
+        }
+        // Validate the product
+        boolean validProduct = productService.validateProductID(productID);
+        if(!validProduct){
+            throw new InvalidProductID(String.format(
+                    "Product with id %s does not exist in system",
+                    productID.toString()
+            ));
+        }
+
+        // Check if the product is owned by this sellerID
+        Product product = productService.getProductByID(productID);
+        AppUser owner = product.getSeller();
+        if(!owner.getId().equals(sellerID)){
+            throw new AcessNotFound(String.format(
+                    "User with name %s does not have access to remove product %s",
+                    owner.getName(),
+                    product.getProductName()
+            ));
+        }
+
+        return product.getRating();
     }
 }
