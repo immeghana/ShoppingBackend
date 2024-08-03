@@ -36,6 +36,6 @@ public class AppUser {
     private String address;
 
     @Column(nullable = false)
-    private String usertype;
+    private String Usertype;
 
 }
